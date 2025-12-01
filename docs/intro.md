@@ -18,7 +18,6 @@ Complete guide to our AngularJS frontend first: module setup, routing, HTTP conf
 - [System Architecture](../docs/tutorial-basics/deploy-your-site.md) - Understanding the system architecture
 - [Coding Standards](../docs/tutorial-basics/create-a-page.md) - Code quality guidelines and best practices
 - [Hosting](../docs/tutorial-basics/create-a-document.md) - Deployment and infrastructure details
-- [Roadmap](../docs/tutorial-basics/markdown-features.mdx) - Future development plans
 
 ### **[Backend/API Documentation](../docs/tutorial-extras/new-developer.md)**
 Build with Rails 7, Rails hosts templates and JSON APIs for Angular, plus data processing via SQL views and query objects.
