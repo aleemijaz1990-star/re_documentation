@@ -18,7 +18,7 @@ Complete guide to our AngularJS frontend first: module setup, routing, HTTP conf
 - [System Architecture](../docs/tutorial-basics/deploy-your-site.md) - Understanding the system architecture
 - [Coding Standards](../docs/tutorial-basics/create-a-page.md) - Code quality guidelines and best practices
 
-### **[Backend/API Documentation](../docs/tutorial-extras/new-developer.md)**
+### **[Backend/API Documentation](../docs/tutorial-extras/translate-your-site.md)**
 Build with Rails 7, Rails hosts templates and JSON APIs for Angular, plus data processing via SQL views and query objects.
 
 ### key Topics
@@ -46,7 +46,7 @@ Complete guide to our relevant medical system containing major features listed b
 
 - **Frontend Developers** - Begin with [Frontend Guide](../docs/tutorial-basics/create-a-blog-post.md) 
 - **Backend Developers** - Begin with [Backend/API Documentation](../docs/tutorial-extras/manage-docs-versions.md)
-- **DevOps Engineers** - Review [Hosting](../docs/tutorial-extras/hosting.md)
+- **DevOps Engineers** - Review [Hosting](../docs/hosting/hosting-deployment.md)
 
 ---
 ## System Overview
