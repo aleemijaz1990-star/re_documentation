@@ -21,22 +21,22 @@ The Dockerfile builds a Phusion Passenger‑based image with Ruby, Node, Nginx, 
 
 - **Base image:** phusion/passenger-customizable:3.0.2 with ports 80 and 4200 exposed.
 - **Language/runtime setup:**
-  - Installs Ruby 3.3 (/pd_build/ruby-3.3.0.sh) and sets it as default with RVM .
-  - Installs Node.js (/pd_build/nodejs.sh) and memcached (/pd_build/memcached.sh) .
+    - Installs Ruby 3.3 (/pd_build/ruby-3.3.0.sh) and sets it as default with RVM .
+    - Installs Node.js (/pd_build/nodejs.sh) and memcached (/pd_build/memcached.sh) .
 - **Passenger and OS packages:**
-  - Adds Phusion Passenger Enterprise APT repo and license, installs libnginx-mod-http-passenger-enterprise, libpq-dev, zip, tzdata, wget, and a legacy libssl1.1 package .
-  - Enables Nginx and memcached services by removing their down files .
+    - Adds Phusion Passenger Enterprise APT repo and license, installs libnginx-mod-http-passenger-enterprise, libpq-dev, zip, tzdata, wget, and a legacy libssl1.1 package .
+    - Enables Nginx and memcached services by removing their down files .
 - **Ruby/Rails and Node tooling:**
-  - Installs nokogiri and rails 7.1.3.2 .
-  - Installs global yarn and @angular/cli@16.2.12, then rebuilds node-sass .
+    - Installs nokogiri and rails 7.1.3.2 .
+    - Installs global yarn and @angular/cli@16.2.12, then rebuilds node-sass .
 - **App code and gems:**
-  - Sets WORKDIR /home/app and COPY . /home/app into the container .
-  - Makes /home/app/log writable and installs bundler -v 2.5.7, followed by bundle install .
+    - Sets WORKDIR /home/app and COPY . /home/app into the container .
+    - Makes /home/app/log writable and installs bundler -v 2.5.7, followed by bundle install .
 - **Init script:**
-  - Copies start.sh into /etc/my_init.d/start.sh and marks it executable so it runs at container start .
+    - Copies start.sh into /etc/my_init.d/start.sh and marks it executable so it runs at container start .
 - **Cleanup:**
-  - Cleans APT cache and temp directories to reduce image size .
-  - The container command is CMD ["/sbin/my_init"], which is standard for Phusion Passenger images and runs init scripts (including start.sh) .
+    - Cleans APT cache and temp directories to reduce image size .
+    - The container command is CMD ["/sbin/my_init"], which is standard for Phusion Passenger images and runs init scripts (including start.sh) .
 
 ## Web server and Passenger configuration
 
@@ -45,9 +45,9 @@ Nginx + Passenger settings are in site_dev.conf and site_prod.conf .
 ### Dev configuration (site_dev.conf)
 - Listens on port 80, server_name localhost, root /home/app/public.
 - Enables Passenger with:
-  - passenger_ruby /usr/bin/ruby3.3.
-  - passenger_app_env development.
-  - passenger_min_instances 2, passenger_thread_count 50.
+    - passenger_ruby /usr/bin/ruby3.3.
+    - passenger_app_env development.
+    - passenger_min_instances 2, passenger_thread_count 50.
 - Sets client_max_body_size 20M.
 - passenger_pre_start http://localhost/ warms the app on startup.
 
@@ -81,8 +81,8 @@ to serve precompiled assets with long‑lived cache headers .
 - default_platform: Docker running on 64bit Amazon Linux 2.
 - default_region: us-west-2.
 - Branch defaults:
-  - master → rws-env.
-  - angular_upgrade → rws-stage-env2.
+    - master → rws-env.
+    - angular_upgrade → rws-stage-env2.
 
 EB uses these settings when you run eb deploy from each branch.
 
@@ -90,7 +90,7 @@ EB uses these settings when you run eb deploy from each branch.
 
 - .ebignore controls which files are deployed to Elastic Beanstalk .
 - Excludes:
-  - Local .bundle, SQLite files, logs, tmp, .idea, .elasticbeanstalk/app_versions, config/master.key, Angular build outputs under app/assets/javascripts/angular2, and generated public/*.js/public/*.css assets.
+    - Local .bundle, SQLite files, logs, tmp, .idea, .elasticbeanstalk/app_versions, config/master.key, Angular build outputs under app/assets/javascripts/angular2, and generated public/*.js/public/*.css assets.
 - This helps avoid shipping local artifacts and sensitive keys.
 
 ### EB extensions
@@ -105,11 +105,11 @@ Another EB extension (ssl.config, not shown but referenced by ssl/readme.txt) is
 Hooks under .platform/hooks customize the EC2/EB environment before and after deployment .
 
 - Prebuild: 01-docker-network.sh:
-  - Ensures a Docker network named rws_net exists (docker network create rws_net) used by docker-compose and possibly other containers.
+    - Ensures a Docker network named rws_net exists (docker network create rws_net) used by docker-compose and possibly other containers.
 - Predeploy: 99_kill_dd.sh:
-  - Stops and removes any host‑level Datadog agent, so only the containerized agent runs.
+    - Stops and removes any host‑level Datadog agent, so only the containerized agent runs.
 - Postdeploy: 02-logs-streamtocloudwatch.sh:
-  - Configures CloudWatch Agent to ship /var/log/secure logs to a log group /aws/elasticbeanstalk/rws-env/var/log/secure and appends this config to the main EB CloudWatch agent config .
+    - Configures CloudWatch Agent to ship /var/log/secure logs to a log group /aws/elasticbeanstalk/rws-env/var/log/secure and appends this config to the main EB CloudWatch agent config .
 
 ## Rails configuration for hosting
 config.ru is standard Rack bootstrapping:
@@ -154,19 +154,19 @@ SSL management is partially documented in ssl/readme.txt .
 A typical production deployment flow:
 
 - Prepare code:
-  - Merge changes into master or another branch mapped to EB environment in .elasticbeanstalk/config.yml .
+    - Merge changes into master or another branch mapped to EB environment in .elasticbeanstalk/config.yml .
 - Build and deploy via EB:
 
 ```
 1  eb deploy             # from the appropriate branch
 ```
 - EB:
-  - Builds the Docker image from Dockerfile.
-  - Starts container(s) with Nginx + Passenger, runs start.sh init.
-  - Applies .platform hooks for Docker network, Datadog cleanup, and CloudWatch logging.
+    - Builds the Docker image from Dockerfile.
+    - Starts container(s) with Nginx + Passenger, runs start.sh init.
+    - Applies .platform hooks for Docker network, Datadog cleanup, and CloudWatch logging.
 - Verify:
-  - Hit the EB environment URL.
-  - Check Datadog dashboards/APM and CloudWatch log groups (/aws/elasticbeanstalk/rws-env/...) for issues.
+    - Hit the EB environment URL.
+    - Check Datadog dashboards/APM and CloudWatch log groups (/aws/elasticbeanstalk/rws-env/...) for issues.
 
 
     
