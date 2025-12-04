@@ -27,39 +27,8 @@ module.exports = (req, res) => {
   }
 
   // const requestedPath = req.url.replace(/^\/docs/, '') || '/';
-  // const filePath = resolveStaticPath(requestedPath);
-
-  // ... (Basic Auth logic) ...
-
-// Use req.url directly, which will be the full path requested by the user
-// (e.g., '/', '/intro', '/assets/logo.png').
   const requestedPath = req.url || '/';
-
-// IMPORTANT: You must also use the improved resolveStaticPath function
-// from the previous answer to handle paths like '/intro' correctly:
-
-  function resolveStaticPath(urlPath) {
-    let staticPath = path.join(process.cwd(), 'build', urlPath);
-
-    // Handle the root path
-    if (urlPath === '/' || urlPath === '') {
-      return path.join(process.cwd(), 'build', 'index.html');
-    }
-
-    // Handle sub-paths without extension (e.g., /intro -> /intro/index.html)
-    if (path.extname(staticPath) === '' && !staticPath.endsWith(path.sep)) {
-      staticPath = path.join(staticPath, 'index.html');
-    }
-
-    return staticPath;
-  }
-
   const filePath = resolveStaticPath(requestedPath);
-
-// ... (404 and File Serving logic) ...
-
-
-
 
   if (!fs.existsSync(filePath)) {
     res.statusCode = 404;
