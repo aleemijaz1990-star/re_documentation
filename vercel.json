@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/docs/intro/:path*",
+      "source": "/docs/:path*",
       "destination": "/api/docs/:path*"
     }
   ]
