@@ -116,7 +116,7 @@ module.exports = (req, res) => {
 
   // 3. Resolve Requested Path (Stripping the public '/docs' prefix)
   // This is crucial for matching the Vercel rewrite rule: /docs/:path* -> /api/docs/:path*
-  const requestedPath = req.url.replace(/^\/docs/, '') || '/';
+  const requestedPath = req.url.replace(/^\/docs^\/intro/, '') || '/';
   const filePath = resolveStaticPath(requestedPath);
 
   // 4. Handle 404 Not Found
