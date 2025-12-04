@@ -26,7 +26,8 @@ module.exports = (req, res) => {
     return;
   }
 
-  const requestedPath = req.url.replace(/^\/docs/, '') || '/';
+  // const requestedPath = req.url.replace(/^\/docs/, '') || '/';
+  const requestedPath =  '/';
   const filePath = resolveStaticPath(requestedPath);
 
   if (!fs.existsSync(filePath)) {
