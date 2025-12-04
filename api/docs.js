@@ -37,6 +37,7 @@ module.exports = (req, res) => {
 
   // 4. Handle Authentication Failure
   if (!isAuthenticated) {
+    console.log('Authentication failed! Sending 401.');
     // Set headers to trigger the browser's native Basic Auth pop-up
     res.setHeader('WWW-Authenticate', 'Basic realm="Secure Documentation"');
     res.statusCode = 401;
