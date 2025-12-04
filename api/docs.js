@@ -5,15 +5,11 @@ const BASIC_AUTH_USERNAME = process.env.BASIC_AUTH_USERNAME;
 const BASIC_AUTH_PASSWORD = process.env.BASIC_AUTH_PASSWORD;
 
 function resolveStaticPath(urlPath) {
-  // Ensure we are resolving to a file path within the 'build' directory.
-  // The path logic here looks correct for mapping URL paths to file paths,
-  // e.g., '/' -> 'build/index.html', '/styles/main.css' -> 'build/styles/main.css'
   const staticPath = path.join(process.cwd(), 'build', urlPath === '/' ? 'index.html' : urlPath);
   return staticPath.endsWith('/') ? path.join(staticPath, 'index.html') : staticPath;
 }
 
 module.exports = (req, res) => {
-  // ... (Basic Auth Logic remains the same) ...
   const basicAuth = req.headers.authorization;
   let isAuthenticated = false;
 
@@ -30,10 +26,7 @@ module.exports = (req, res) => {
     return;
   }
 
-  // 1. Get the requested URL path directly.
-  const requestedPath = req.url || '/';
-
-  // 2. The resolveStaticPath function handles mapping the URL to the 'build' directory file.
+  const requestedPath = req.url.replace(/^\/docs/, '') || '/';
   const filePath = resolveStaticPath(requestedPath);
 
   if (!fs.existsSync(filePath)) {
@@ -42,7 +35,6 @@ module.exports = (req, res) => {
     return;
   }
 
-  // ... (MIME type and file serving logic remains the same) ...
   const ext = path.extname(filePath).toLowerCase();
   const mimeTypes = {
     '.html': 'text/html',
