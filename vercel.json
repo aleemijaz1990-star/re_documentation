@@ -1,5 +1,10 @@
 {
+  "builds": [
+    { "src": "middleware.js", "use": "@vercel/node" },
+    { "src": "build/**", "use": "@vercel/static" }
+  ],
   "routes": [
-    { "src": "/(.*)", "middlewarePath": "middleware" }
+    { "src": "/(.*)", "middlewarePath": "middleware" },
+    { "src": "/(.*)", "dest": "/build/$1" }
   ]
 }
