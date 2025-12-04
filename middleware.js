@@ -1,20 +1,23 @@
+export const config = {
+  matcher: "/:path*"
+};
+
 export function middleware(req) {
-  const basicAuth = req.headers.get("authorization");
+  const auth = req.headers.get("authorization");
 
-  const username = "admin";      // Change this
-  const password = "secret123";  // Change this
+  const username = "admin";
+  const password = "12345";
 
-  const validAuth =
-      "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
+  const expected = "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
 
-  if (basicAuth === validAuth) {
-    return; // Allow access
+  if (auth === expected) {
+    return Response.next();
   }
 
-  return new Response("Authentication required", {
+  return new Response("Authentication Required", {
     status: 401,
     headers: {
-      "WWW-Authenticate": 'Basic realm="Protected Docs"',
-    },
+      "WWW-Authenticate": 'Basic realm="Secure Area"'
+    }
   });
 }
