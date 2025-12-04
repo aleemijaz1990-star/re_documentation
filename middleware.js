@@ -11,7 +11,7 @@ export function middleware(req) {
   const expected = "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
 
   if (auth === expected) {
-    return Response.next();
+    return new Response(null, { status: 200 }); // allow request
   }
 
   return new Response("Authentication Required", {
