@@ -1,10 +1,5 @@
 {
-  "rewrites": [
-    {
-      "source": "/docs/:path*",
-      "destination": "/api/docs/:path*"
-    }
-  ]
+  "middleware": {
+    "path": "middleware.js"
+  }
 }
-
-
