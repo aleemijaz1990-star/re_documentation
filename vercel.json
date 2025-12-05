@@ -1,5 +1,8 @@
 {
-  "middleware": {
-    "path": "middleware.js"
-  }
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ]
 }
