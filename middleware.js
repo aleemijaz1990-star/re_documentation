@@ -1,11 +1,12 @@
+import { NextResponse } from "next/server";
+import { Buffer } from "buffer"; // needed for decoding
+
 export default function middleware(req) {
-  const url = req.nextUrl;
   const basicAuth = req.headers.get("authorization");
 
   const username = process.env.BASIC_AUTH_USERNAME;
   const password = process.env.BASIC_AUTH_PASSWORD;
 
-  // If no auth header present
   if (!basicAuth) {
     return new Response("Auth required", {
       status: 401,
@@ -15,12 +16,10 @@ export default function middleware(req) {
     });
   }
 
-  // Extract auth header and decode
   const [scheme, encoded] = basicAuth.split(" ");
   const decoded = Buffer.from(encoded, "base64").toString();
   const [user, pass] = decoded.split(":");
 
-  // Validate credentials
   if (user !== username || pass !== password) {
     return new Response("Unauthorized", {
       status: 401,
@@ -30,10 +29,10 @@ export default function middleware(req) {
     });
   }
 
-  // Allow request if correct
   return NextResponse.next();
 }
 
+// Protect all routes except static files
 export const config = {
-  matcher: ['/((?!_next|static|favicon.ico).*)'], // protects everything
+  matcher: ['/((?!_next|static|favicon.ico|assets|images|fonts|css|js).*)'],
 };
