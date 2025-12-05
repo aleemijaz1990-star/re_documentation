@@ -1,0 +1,15 @@
+{
+  "routes": [
+    {
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|pdf))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/docs"
+    }
+  ]
+}
+
+
+
