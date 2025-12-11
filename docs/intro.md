@@ -3,10 +3,12 @@ sidebar_position: 1
 ---
 
 # Relevant Documentation
-
-Welcome to the Relevant technical documentation. This documentation covers our relevant medical platform including frontend, backend API, features and security of the system.
+Relevant Medical System is a sophisticated, multi-client, communication and workflow automation platform designed to enhance patient engagement, optimize marketing spend, and ensure data integrity across various clinical and business systems.
+The system operates as a powerful integration and communication layer, linking external Electronic Medical Records (EMR) systems and proprietary client data sources to an automated patient outreach engine.
 
 ## Quick Navigation
+Welcome to the Relevant technical documentation. This documentation covers our relevant medical platform including frontend, backend API, workflow automation(rfl), processing automation(rpc), features , hosting and security of the system.
+
 
 ### **[Frontend Documentation](../docs/tutorial-basics/create-a-page.md)** 
 Complete guide to our AngularJS frontend first: module setup, routing, HTTP config, key directives/components, controllers, and UI data flows. We’ll link each part to its source and note the backend calls it triggers.
@@ -29,11 +31,23 @@ Build with Rails 7, Rails hosts templates and JSON APIs for Angular, plus data p
 - [Testing](../docs/tutorial-extras/testing-guide.md) - Test Cases
 - [External Services](../docs/tutorial-extras/extra-service-configurations.md) - Third-party integrations (Google Maps, Google Authentication, Pusher, Twilio)
 
+### **[Rfl](../docs/rfl/relevant-workflow-automation.md)**
+
+### key Topics
+- [Relevant Workflow Automation](../docs/rfl/relevant-workflow-automation.md) - Covers the core components of Relevant Workflow Automation system.
+
+
 ### **[Features](../docs/features/nudges.md)**
 Complete guide to our relevant medical system containing major features listed below
 
 ### key Topics
+- [Dashboard](../docs/features/dashboard.md) - Landing page that covers all the basic features.
 - [Nudges](../docs/features/nudges.md) - Angular code loads nudges, touch-step summaries, and appointment lists.
+- [Patients](../docs/features/patients.md) -  Features and functionality of the Patients management module.
+- [Texts](../docs/features/text.md) - Send or schedule individual and bulk SMS messages to patients and clients.
+- [Leads](../docs/features/leads.md) - Allows authorized users to track, manage, and engage with potential clients.
+- [Reports](../docs/features/reports.md) - Designed to allow users to generate, filter, and view key operational data regarding general reports.
+
 
 ### [Hosting](../docs/hosting/hosting-deployment.md)
 
