@@ -31,7 +31,7 @@ Build with Rails 7, Rails hosts templates and JSON APIs for Angular, plus data p
 - [Testing](../docs/tutorial-extras/testing-guide.md) - Test Cases
 - [External Services](../docs/tutorial-extras/extra-service-configurations.md) - Third-party integrations (Google Maps, Google Authentication, Pusher, Twilio)
 
-### **[Rfl](../docs/rfl/relevant-workflow-automation.md)**
+### **[RFL](../docs/rfl/relevant-workflow-automation.md)**
 
 ### key Topics
 - [Relevant Workflow Automation](../docs/rfl/relevant-workflow-automation.md) - Covers the core components of Relevant Workflow Automation system.

@@ -1,6 +1,6 @@
 {
-  "label": "Security",
-  "position": 8,
+  "label": "RPC",
+  "position": 5,
   "link": {
     "type": "generated-index"
   }

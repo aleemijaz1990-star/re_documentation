@@ -65,6 +65,36 @@ Dashboard:https://www.twilio.com/console/usage/metrics
 
 **Alerts:** Set up usage triggers within the Twilio console to receive notifications when spending approaches a set limit.
 
+### Twilio Webhook Endpoints
+These endpoints are crucial for real-time communication, processing incoming patient replies, handling opt-outs, and tracking message delivery failures.
+
+#### Inbound SMS Handler (twilio_sms)
+This method is the primary recipient for all patient replies and incoming messages sent to the application's phone numbers.
+
+| Component | Logic | Description |
+| :--- | :--- | :--- |
+| **Raw Logging** | `MessageInDetail.create(...)` | Logs the raw status webhook payload with the provider type `TwilioStatus` for complete auditing. |
+| **Outgoing Match** | `MessageOutDetail.where(source_id: dt[:SmsSid]).first` | Uses the Twilio **SmsSid** (the unique message identifier) from the status payload to locate and match the original outgoing message record in the database. |
+| **Status Update** | `mo.update(status: dt[:SmsStatus])` | Updates the status of the outgoing message record (e.g., `delivered`, `undelivered`, `failed`). |
+| **Undelivered Check** | `if dt[:SmsStatus] == "undelivered"` | Triggers specific failure handling procedures for messages that could not be delivered to the recipient's carrier/device. |
+| **A2P 10DLC Resend** | `if dt[:ErrorCode] == "30034"` | Checks for the specific error code 30034 (often related to A2P 10DLC registration issues). If found for a non-automated message (`touch_step_id.nil?`), it sets a retry delay (`mo.delay + 20`) and clears the `status` and `source_id`, which effectively **reschedules the message** for processing by the background worker. |
+| **Invalid Number Block** | `PatientsPhone.where(phone: to).update_all(textable: 'f')` | For general undelivered errors, the recipient's phone number is globally marked as `textable: false` across all clients. This prevents the system from wasting resources sending future messages to a known bad number. |
+| **Final Response** | `render :xml => "<Response/>"` | Returns an empty TwiML response to Twilio to acknowledge the status receipt. |
+
+#### Status Webhook Handler (twilio_sms_status)
+This method handles asynchronous delivery receipts and failure notifications from Twilio for messages sent by the application.
+
+| Component | Logic | Description |
+| :--- | :--- | :--- |
+| **Raw Logging** | `MessageInDetail.create(...)` | Logs the raw status webhook payload with the provider type `TwilioStatus` for complete auditing. |
+| **Outgoing Match** | `MessageOutDetail.where(source_id: dt[:SmsSid]).first` | Uses the Twilio **SmsSid** (the unique message identifier) from the status payload to locate and match the original outgoing message record in the database. |
+| **Status Update** | `mo.update(status: dt[:SmsStatus])` | Updates the status of the outgoing message record (e.g., `delivered`, `undelivered`, `failed`). |
+| **Undelivered Check** | `if dt[:SmsStatus] == "undelivered"` | Triggers critical failure handling procedures when a message could not be delivered. |
+| **A2P 10DLC Resend** | `if dt[:ErrorCode] == "30034"` | Checks for the specific error code **30034** (often related to A2P 10DLC registration issues). If found for a non-automated message (`touch_step_id.nil?`), it clears the status, sets a retry delay (`mo.delay + 20`), and effectively **reschedules the message** for retry by the background worker. |
+| **Invalid Number Block** | `PatientsPhone.where(phone: to).update_all(textable: 'f')` | For general undelivered errors, the recipient's phone number is globally marked as `textable: false` across all clients to prevent future messages from being sent to a known bad number. |
+| **Final Response** | `render :xml => "<Response/>"` | Returns an empty TwiML response to Twilio to acknowledge the status receipt. |
+
+
 ---
 
 ### Pusher (Real-Time Data)

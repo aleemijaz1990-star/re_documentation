@@ -71,16 +71,28 @@ The AngularJS app is bundled via Rails assets:
 With rails server running, visit the root URL; AngularJS routes are configured in app/assets/javascripts/app/config/route_provider.js.coffee
 
 
-## Frontend – Angular (client/)
-f you work on the newer Angular app:
+## Frontend – Angular 2 (client/)
+The Angular client application is handled through two distinct phases in the start.sh script: Nginx Deployment Configuration (for production serving) and Build/Development Setup.
 
- 1. In client/:
-```
-1 cd client
-2 npm install
-3 ng serve
-```
-- See client/README.md for details (build, tests, e2e)
+### Nginx Web Server Configuration
+This initial phase ensures the Nginx web server is correctly configured to serve the API and the compiled static assets of the Angular client, depending on the environment.
+
+| Component | Command/File | Description |
+| :--- | :--- | :--- |
+| **Default Removal** | `rm -rf /etc/nginx/sites-enabled/default` | Removes the default Nginx configuration to prevent conflicts with the application's specific setup. |
+| **Rails Environment** | `cp rails.conf /etc/nginx/main.d/` | Integrates Rails environment variables and configurations into the Nginx server context. |
+| **Environment Config** | `cp site_prod.conf /etc/nginx/sites-enabled/site.conf` (or `site_dev.conf` in development) | **Crucial Step:** Selects and copies the appropriate Nginx virtual host configuration (e.g., `site_prod.conf` or `site_dev.conf` based on the `$environment` variable) to define how the server handles requests to the compiled Angular application and the backend API routes. |
+
+### Angular Build and Runtime
+This phase enters the client directory, installs dependencies, builds the application, and starts the development server if necessary.
+
+| Component | Command | Description |
+| :--- | :--- | :--- |
+| **Dependency Install** | `cd client` followed by `yarn` | Navigates into the Angular project directory and uses **Yarn** to install all necessary Node.js dependencies defined in `package.json`. |
+| **Application Build** | `ng build --configuration $environment` | Executes the Angular CLI build command. This compiles the TypeScript, HTML, and SCSS assets into optimized, deployable static files tailored for the specified environment (e.g., `production` or `development`). |
+| **Backend Integration** | `cd ..` followed by `ruby config.rb` | After the Angular build completes, control returns to the root directory to execute a **Ruby configuration script**. This step likely performs crucial post-build tasks like adjusting manifest files, injecting configuration variables, or preparing assets for the Rails backend. |
+| **Development Server** | `ng serve --host 0.0.0.0 --port 4200 &` | **(Development Only)** Starts the Angular CLI's development server on port `4200`. This enables features like live reloading and is run in the background (`&`) to allow the Nginx web server and backend workers to start concurrently. |
+
 
 ## Configuration and environments
 ### Rails environments

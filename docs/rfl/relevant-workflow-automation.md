@@ -4,14 +4,154 @@ sidebar_position: 1
 
 # Relevant Workflow Automation
 This documentation covers the core components of Relevant Workflow Automation system, focusing on the background processes responsible for integrating data and executing automated patient engagement (Nudges and Touches).
-these workflows indicate a system designed for a specific client, denoted as bcb (likely a concrete company or client ID), emphasizing real-time data integration and automated marketing.
+these workflows indicate a system designed for multi-clients (likely a concrete company or client ID), emphasizing real-time data integration and automated event base reminders.
+
+## Local Environment Setup Guide
+This system relies on a Docker container environment to manage its numerous dependencies, especially external VPNs and database clients required for Sycle integration.
+
+### Prerequisites
+You must have the following tools installed on your development machine:
+- Docker and Docker Compose (for building and running containers).
+- Git (for cloning the repository).
+- AWS Credentials (configured locally or passed as environment variables, as the code directly uses AWS SDKs for SQS/S3).
+
+### Step 1: Analyze the Dockerfile
+
+The Dockerfile defines the execution environment. The key takeaways for local setup are the dependencies and the base image.
+
+| Component | Dependency | Notes |
+| :--- | :--- | :--- |
+| **Base Image** | `phusion/passenger-ruby33:3.0.7` | Indicates the application uses the **Passenger** application server running on **Ruby 3.3** for the web component. |
+| **Internal Database Client** | `libpq-dev` | Required for connecting to the internal application database (**PostgreSQL**). |
+| **External Database Clients** | `mariadb-client-core-10.6`, `libmysqlclient-dev` | Required for connecting to external databases, notably the **Sycle EMR** system which uses **MySQL** (or MariaDB). |
+| **Proprietary VPN Clients** | `openvpn`, `NetExtender`, `Pulse Secure` | **Crucial:** These VPN clients must be installed inside the container to establish network connections to external, private client/EMR systems (like Sycle). Configuration files must be present in the `vpnconfig/` directory. |
+| **Sybase/SQL Client** | `sqlanywhere17` client | Necessary for connecting to specific Sybase/SQL Anywhere databases, often used by EMRs integrated into the system. |
+| **Application Directory** | `/home/app` | This is the primary working directory within the container where the entire application codebase resides and executes from. |
+
+**Action:** Ensure you have access to the contents of the vpnconfig/ directory (including .conf, .crt, .key, .pass, and VPN/SQL installer files) as referenced in the Dockerfile.
+
+### Step 2: Analyze the Start Script (start.sh)
+The start.sh script defines how the application and its background workers are initialized within the running container.
+
+| Component | Command | Notes |
+| :--- | :--- | :--- |
+| **Environment** | `export DATABASE='rwsdb_prod' (or 'rwsdb_dev')` | Sets the environment variable for the internal PostgreSQL database name (`rwsdb_dev` or `rwsdb_prod`) based on the Docker environment setting. |
+| **Scheduled Jobs** | `cp cpath/* /etc/cron.{monthly,daily,hourly}` | Copies necessary files to set up standard **cron jobs** for scheduled, non-realtime workflows (typically older or less frequent client processes). |
+| **Cron Service** | `cron` | Starts the Unix cron daemon in the background to execute the newly configured scheduled jobs. |
+| **Workflow Handlers** | `ruby cpath/activities.rb & ruby cpath/workflows.rb & ...` | Starts various legacy or secondary workflow handlers in the background (`&`), ensuring they run concurrently with the main processes. |
+| **Realtime Queue Handlers** | `ruby shd/process_realtime_activities.rb &` | Starts the **Master Scheduler**, the primary orchestrator that runs all client-specific Nudge/Refresh jobs every 40 minutes during business hours. |
+| **Queue Processors** | `ruby shd/process_sycle_refresh_queue.rb & ruby shd/process_sycle_appt_refresh_queue.rb &` | Starts the dedicated **SQS worker processes** responsible for continuously consuming messages and executing the intensive Sycle data synchronization and refresh tasks. |
+
+**Action:** This script reveals that you need the directories cpath/ and shd/ populated with the corresponding Ruby scripts.
+
+### Step 3: Local Setup Steps
+#### Clone the Repository
+
+```
+git clone <your-repository-url>
+cd <your-repository-name>
+```
+
+#### Prepare the Configuration Files
+You must create the vpnconfig/ directory and populate it with the required files for the VPNs and Sybase client, as mentioned in the Dockerfile. Without these, the Docker build will fail or the running application will not be able to connect to external EMRs.
+
+#### Build the Docker Image
+The build process is complex due to the external software installations.
+
+```
+docker build -t relevant-medical-system:local .
+```
+
+#### Run the Containers (using Docker Compose)
+The start.sh assumes the internal database (rwsdb_dev) is running and accessible. You will need a docker-compose.yml file to link your application container to a separate PostgreSQL container.
+
+**Example** docker-compose.yml **(Conceptual):**
+
+```
+version: '3.8'
+services:
+  # The internal application database (PostgreSQL)
+  postgres_db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: rwsdb_dev
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: ${RDS_PASSWORD} # You need to set this environment variable
+    ports:
+      - "5432:5432"
+
+  # The main application container
+  app:
+    build: .
+    image: relevant-medical-system:local
+    environment:
+      # Set your AWS and other credentials here
+      RDS_PASSWORD: ${RDS_PASSWORD}
+      environment: development # This sets the DATABASE to rwsdb_dev in start.sh
+      # AWS credentials for SQS/S3
+      AWS_ACCESS_KEY_ID: <YOUR_AWS_ACCESS_KEY>
+      AWS_SECRET_ACCESS_KEY: <YOUR_AWS_SECRET_KEY>
+    volumes:
+      - .:/home/app # Mount your local code for development
+    depends_on:
+      - postgres_db
+    # This command executes the logic from start.sh
+    command: /bin/bash -c "chmod +x /home/app/start.sh && /home/app/start.sh"
+    ports:
+      - "44444:44444" # Dummy port from Dockerfile
+
+# Start the services
+# docker-compose up -d
+```
+
+#### Database and Migration
+Once the containers are running, you must run the database migrations and seed the database, as is standard for Rails applications. This often involves connecting to the postgres_db container and running commands like bundle exec rake db:create, db:migrate, and db:seed.
+
+### Step 4: Verification
+- **Check Logs:** Monitor the logs of the app container to ensure the processes started by start.sh are running without immediate errors (especially the SQS workers).
+- **Access API:** The Passenger base image suggests the web application will run on the exposed port (44444 in the Dockerfile), though you'll need to confirm the correct web server setup outside of the provided scripts.
+- **Realtime Check:** Observe the logs for the Master Scheduler (process_realtime_activities.rb) to see if it starts and runs the client jobs every 40 minutes during the specified UTC hours.
+
+
+---
+## Relevant Workflow Automation (Execution Layer)
+This section the core execution and orchestration layers of Relevant Workflow Automation system. These scripts manage the scheduling, data import processing, and message consumption for Sycle and other client-specific integrations
+
+The following processes run continuously in the background to maintain real-time data synchronization and trigger client-specific engagement workflows.
+
+### Master Scheduler
+(process_realtime_activities.rb)
+
+This script acts as the central orchestrator, ensuring that all client-specific data import and patient engagement jobs run at regular intervals during active business hours.
+
+| Component | Description |
+| :--- | :--- |
+| **Purpose** | To orchestrate the execution of all client-specific real-time jobs (Data Sync and Nudge Processing). |
+| **Schedule** | Runs continuously in a loop, executing a full cycle every **40 minutes** (`sleep 2400`). |
+| **Operating Hours** | **Daytime Only:** Jobs are only triggered if the current UTC hour is between `15` and `24` (approximately **8am to 6pm MST/MDT**), preventing unnecessary execution during non-business hours. |
+| **Execution** | All client jobs are executed concurrently within a new **Thread**, preventing one long-running data sync or message process from blocking all other client workflows. |
+| **Jobs Executed** | **Data Refresh:** `mhc_refresh_sycle_appt_data`, `ssm_refresh_sycle_appt_data`, `bcb_concrete_import_customers_orders`. **Nudge Processing:** `mhc_process_nudges_and_touches`, `ssm_process_nudges_and_touches`, `bcb_process_nudges_and_touches`. |
+
+### Sycle Data Processor: Appointment Queue
+(process_sycle_appt_refresh_queue.rb)
+
+This process is the receiver and executor for the real-time appointment refresh requests initiated by clients (e.g., mhc_realtime_refresh_sycle_appt_data). It manages the complex logic of connecting to the external Sycle database and merging that data into the application's core tables.
+
+| Component | Description |
+| :--- | :--- |
+| **Role** | Handles a comprehensive Sycle data refresh, synchronizing a wide range of data points including patients, appointments, and purchases. |
+| **Key Function: `cassify`** | This unique function orchestrates the **address standardization** process (indicative of CASS, or Coding Accuracy Support System). It involves three steps: 1. Uploads a patient file to S3. 2. Sends a request to the **`Cassify:In`** SQS queue. 3. Waits for the standardized address data from the **`Cassify:Out`** queue. |
+| **Synchronization** | Connects to the external Sycle database to retrieve and process: **Patients** (separated into `customers` and `prospects`), **Appointments**, and **Purchases**. |
+| **Data Cleanup** | The process rigorously ensures a clean state by dropping all temporary tables (`tmp_patients_...`, `tmp_appointments_...`, etc.) upon the completion of the synchronization run. |
+
+---
 
 
 ## Relevant Workflow Automation (Background Processes)
 The automation system runs as a series of background jobs (likely workers or cron jobs) responsible for two major, distinct tasks: data synchronization (importing customer/order data) and patient engagement (processing nudges and touches).
 
 ### Data Import and Synchronization
-(bcb_realtime_concrete_import_customers_orders.rb)
+(bcb_concrete_import_customers_orders.rb)
 
 This process is critical for maintaining up-to-date customer, order, and appointment data within the application. It acts as an integration layer, pulling data from an external source (identified as a SOAP Concrete API) into the application's internal database structure.
 
@@ -154,33 +294,3 @@ The execution flow for generating and tracking messages is standard across clien
 | **Media Buys Tracking** | Creates a **`MediaBuy`** record for any **Touch Step** configured for tracked marketing spend (e.g., Direct Mail), logging the cost, fulfillment details, and recipient list (`media_buys_recipients`). |
 
 ---
-## Relevant Workflow Automation (Execution Layer)
-This section the core execution and orchestration layers of Relevant Workflow Automation system. These scripts manage the scheduling, data import processing, and message consumption for Sycle and other client-specific integrations
-
-The following processes run continuously in the background to maintain real-time data synchronization and trigger client-specific engagement workflows.
-
-### Master Scheduler 
-(process_realtime_activities.rb)
-
-This script acts as the central orchestrator, ensuring that all client-specific data import and patient engagement jobs run at regular intervals during active business hours.
-
-| Component | Description |
-| :--- | :--- |
-| **Purpose** | To orchestrate the execution of all client-specific real-time jobs (Data Sync and Nudge Processing). |
-| **Schedule** | Runs continuously in a loop, executing a full cycle every **40 minutes** (`sleep 2400`). |
-| **Operating Hours** | **Daytime Only:** Jobs are only triggered if the current UTC hour is between `15` and `24` (approximately **8am to 6pm MST/MDT**), preventing unnecessary execution during non-business hours. |
-| **Execution** | All client jobs are executed concurrently within a new **Thread**, preventing one long-running data sync or message process from blocking all other client workflows. |
-| **Jobs Executed** | **Data Refresh:** `mhc_refresh_sycle_appt_data`, `ssm_refresh_sycle_appt_data`, `bcb_concrete_import_customers_orders`. **Nudge Processing:** `mhc_process_nudges_and_touches`, `ssm_process_nudges_and_touches`, `bcb_process_nudges_and_touches`. |
-
-### Sycle Data Processor: Appointment Queue 
-(process_sycle_appt_refresh_queue.rb)
-
-This process is the receiver and executor for the real-time appointment refresh requests initiated by clients (e.g., mhc_realtime_refresh_sycle_appt_data). It manages the complex logic of connecting to the external Sycle database and merging that data into the application's core tables.
-
-| Component | Description |
-| :--- | :--- |
-| **Role** | Handles a comprehensive Sycle data refresh, synchronizing a wide range of data points including patients, appointments, and purchases. |
-| **Key Function: `cassify`** | This unique function orchestrates the **address standardization** process (indicative of CASS, or Coding Accuracy Support System). It involves three steps: 1. Uploads a patient file to S3. 2. Sends a request to the **`Cassify:In`** SQS queue. 3. Waits for the standardized address data from the **`Cassify:Out`** queue. |
-| **Synchronization** | Connects to the external Sycle database to retrieve and process: **Patients** (separated into `customers` and `prospects`), **Appointments**, and **Purchases**. |
-| **Data Cleanup** | The process rigorously ensures a clean state by dropping all temporary tables (`tmp_patients_...`, `tmp_appointments_...`, etc.) upon the completion of the synchronization run. |
-
